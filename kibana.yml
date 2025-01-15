@@ -1,0 +1,67 @@
+# Server configuration
+server.name: "job-portal-kibana"
+server.host: "0.0.0.0"
+server.port: 5601
+server.maxPayloadBytes: 1048576
+
+# Elasticsearch connection
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.requestTimeout: 30000
+
+# Security settings (for development)
+xpack.security.enabled: false
+xpack.encryptedSavedObjects.encryptionKey: "something_at_least_32_characters"
+
+# Monitoring and reporting
+xpack.monitoring.enabled: true
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+xpack.reporting.enabled: true
+xpack.reporting.capture.browser.chromium.disableSandbox: true
+
+# APM configuration
+xpack.apm.enabled: true
+xpack.apm.serviceMapEnabled: true
+xpack.apm.ui.enabled: true
+
+# Index patterns
+kibana.defaultAppId: "discover"
+kibana.index: ".kibana"
+
+# Logging configuration
+logging.dest: stdout
+logging.json: true
+logging.quiet: false
+logging.verbose: false
+
+# Locale setting
+i18n.locale: "en"
+
+# Fleet configuration (if using Fleet)
+xpack.fleet.enabled: true
+xpack.fleet.agents.enabled: true
+xpack.fleet.agents.elasticsearch.hosts: ["http://elasticsearch:9200"]
+xpack.fleet.packages.apm.enabled: true
+xpack.fleet.agentPolicies.default_monitoring:
+  name: "APM Monitoring Policy"
+  namespace: "default"
+  monitoring_enabled:
+    - logs
+    - metrics
+  package_policies:
+    - name: "apm-server-policy"
+      package:
+        name: "apm"
+      inputs:
+        - type: "apm"
+          enabled: true
+          vars:
+            host: "0.0.0.0:8200"
+            max_event_size: "1mb"
+            secret_token: "secret-token"
+  agent_defaults:
+    monitoring:
+      enabled: true
+      use_output: "default"
+      logs: true
+      metrics: true
+

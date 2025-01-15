@@ -1,0 +1,135 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: job-portal-redis
+    ports:
+      - "6379:6379" 
+    volumes:
+      - ./docker-volumes/redis:/data
+    restart: always
+    command: redis-server --loglevel verbose
+    networks:
+      - job-portal-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: job-portal-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./docker-volumes/mongodb:/data/db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    networks:
+      - job-portal-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: job-portal-mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker-volumes/mysql:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: jobportal
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    networks:
+      - job-portal-network
+
+  postgres:
+    image: postgres:latest
+    container_name: job-portal-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker-volumes/postgres:/var/lib/postgresql/data
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: jobportal
+    networks:
+      - job-portal-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: job-portal-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    volumes:
+      - ./docker-volumes/rabbitmq:/var/lib/rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    networks:
+      - job-portal-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: job-portal-elasticsearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - ./docker-volumes/elasticsearch:/usr/share/elasticsearch/data
+    restart: always
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: false
+      xpack.security.authc.api_key.enabled: true
+      xpack.monitoring.collection.enabled: true
+      xpack.security.enrollment.enabled: true
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      bootstrap.memory_lock: true
+      cluster.name: job-portal-cluster
+
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - job-portal-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: job-portal-kibana
+    ports:
+      - "5601:5601"
+    volumes:
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: kibana_system
+      XPACK_SECURITY_ENABLED: false
+      XPACK_REPORTING_ENABLED: true
+      XPACK_MONITORING_ENABLED: true
+      SERVER_NAME: job-portal-kibana
+    depends_on:
+      - elasticsearch
+    restart: always
+    networks:
+      - job-portal-network
+
+
+volumes:
+  redis_data:
+  mongodb_data:
+  mysql_data:
+  postgres_data:
+  rabbitmq_data:
+  elasticsearch_data:
+  kibana_data:
+
+networks:
+  job-portal-network:
+    driver: bridge
+
